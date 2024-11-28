@@ -11,9 +11,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start":" react-script start",
-    "build": "react-script build",
-    "eject": "react-script eject",
+   
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
