@@ -6,45 +6,83 @@ const UserList = () => {
     const [formData, setFormData] = useState({ username: '', idNumber: '', phoneNumber: '', position: '' });
 
     useEffect(() => {
-        const storedUsers = JSON.parse(localStorage.getItem("users")) || [];
-        setUsers(storedUsers);
+        const fetchUsers = async () => {
+            try {
+                const response = await fetch('http://localhost:8081/api/users');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                setUsers(data);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+
+        fetchUsers();
     }, []);
 
-    const handleDelete = (idNumber) => {
-        const updatedUsers = users.filter(u => u.idNumber !== idNumber);
-        setUsers(updatedUsers);
-        localStorage.setItem("users", JSON.stringify(updatedUsers));
-        alert('User deleted successfully');
+    const handleDelete = async (username) => {
+        console.log(`Deleting user with ID number: ${username}`);
+        try {
+            const response = await fetch(`http://localhost:8081/api/users/${username}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const updatedUsers = users.filter(user => user.username !== username);
+            setUsers(updatedUsers);
+            alert('User deleted successfully');
+        } catch (error) {
+            console.error('Error deleting user:', error);
+        }
     };
 
     const handleEdit = (user) => {
+        console.log(`Editing user:`, user);
         setEditingUser(user);
         setFormData({ 
-            username: user.name, 
-            idNumber: user.idNumber, 
-            phoneNumber: user.phoneNumber, 
+            username: user.username, 
+            idNumber: user.idNumber,
+            phoneNumber: user.phoneNumber,
             position: user.position 
         });
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const handleChange = (event) => {
+        const { username, value } = event.target;
+        setFormData(prev => ({ ...prev, [username]: value }));
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const updatedUsers = users.map(user => 
-            user.idNumber === editingUser.idNumber ? { ...user, ...formData } : user
-        );
-        setUsers(updatedUsers);
-        localStorage.setItem("users", JSON.stringify(updatedUsers));
-        setEditingUser(null); // Close the edit form
-        alert('User updated successfully');
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        console.log('Submitting edit for user:', formData);
+        try {
+            const response = await fetch(`http://localhost:8081/api/users/${editingUser.name}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            });
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const updatedUser = await response.json();
+            const updatedUsers = users.map(user =>
+                user.username === editingUser.v ? updatedUser : user
+            );
+            setUsers(updatedUsers);
+            setEditingUser(null);
+            alert('User updated successfully');
+        } catch (error) {
+            console.error('Error updating user:', error);
+        }
     };
 
     const handleCancelEdit = () => {
-        setEditingUser(null); // Cancel editing
+        setEditingUser(null);
     };
 
     return (
@@ -53,7 +91,7 @@ const UserList = () => {
             {editingUser ? (
                 <form onSubmit={handleSubmit}>
                     <h3>Edit User</h3>
-                    <input type="text" name="username" value={formData.name} onChange={handleChange} placeholder="username" required />
+                    <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Username" required />
                     <input type="text" name="idNumber" value={formData.idNumber} onChange={handleChange} placeholder="ID Number" required disabled />
                     <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="Phone Number" required />
                     <input type="text" name="position" value={formData.position} onChange={handleChange} placeholder="Position" required />
@@ -80,7 +118,7 @@ const UserList = () => {
                                 <td>{user.position}</td>
                                 <td>
                                     <button onClick={() => handleEdit(user)}>Edit</button>
-                                    <button onClick={() => handleDelete(user.idNumber)}>Delete</button>
+                                    <button onClick={() => handleDelete(user.username)}>Delete</button>
                                 </td>
                             </tr>
                         ))}

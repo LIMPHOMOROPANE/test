@@ -30,14 +30,14 @@ const App = () => {
                     <h1>Welcome to WINGS CAFE!</h1>
                     {isAuthenticated && (
                         <nav>
-                            <ul>
-                                <li><Link to="/home">Go to Home</Link></li>
-                                <li><Link to="/dashboard">Dashboard</Link></li>
-                                <li><Link to="/product-management">Product Management</Link></li>
-                                <li><Link to="/user-management">User Management</Link></li>
-                                <li><Link to="/stock-management">Stock Management</Link></li>
-                                <li><button onClick={handleLogout}>Logout</button></li>
-                            </ul>
+                            
+                                <Link to="/home">Go to Home</Link>
+                                <Link to="/dashboard">Dashboard</Link>
+                                <Link to="/product-management">Product Management</Link>
+                                <Link to="/user-management">User Management</Link>
+                                <Link to="/stock-management">Sales Management</Link>
+                                <button onClick={handleLogout}>Logout</button>
+                            
                         </nav>
                     )}
                 </header>

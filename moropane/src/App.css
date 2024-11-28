@@ -3,15 +3,19 @@ body {
   margin: 0;
   padding: 20px;
   background: #8c8a8a;
+  background-image: url('Op.jpg'); /* Set your image path */
+  background-size: cover; /* Cover the entire body */
+  background-position: center; /* Center the background image */
+  background-repeat: no-repeat; 
 }
 
 .container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: auto;
-  background: white;
+  background: rgb(202, 199, 199);
   padding: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1)
 }
 
 header {
@@ -22,19 +26,40 @@ header {
 }
 
 nav {
-  margin: 20px 0;
+  margin: 30px 10px;
+  background: #c4bfbf;
+  color: #181313;
+  width: 850px;
+  height: 60px;
+  display: flex;
+    gap: 25px;
+    margin-top: 20px;
+    font-size: 20px; /* Change this value to adjust text size */
+    font-weight: bold; /* Make it bold if desired */
+    color: #ffffff; /* You can change the link color if needed */
+    text-decoration: none; 
 }
 
+
 nav button {
-  margin: 0 10px;
+  margin: 0 5px;
+}
+nav a {
+  text-decoration: none; /* Remove underline from links */
+  color:  #181313;/* Make link inherit the text color, optional */
+}
+
+nav a:hover {
+  text-decoration: underline; /* Optional: add underline on hover */
+  color: #007BFF; /* Optional: change color on hover */
 }
 
 section {
-  background: #ffffff;
+  background: #c4bfbf;
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 5px;
-  box-shadow: 0 0 10px #cccccc;
+  box-shadow: 0 0 10px #181111;
 }
 
 h2 {
@@ -48,7 +73,8 @@ form {
 form input, form select {
   margin: 5px 0;
   padding: 10px;
-  width: 100%;
+  width: 90%;
+  
   box-sizing: border-box;
 }
 
@@ -66,7 +92,7 @@ table {
 }
 
 table, th, td {
-  border: 1px solid #dddddd;
+  border: 1px solid #cbc2c2;
 }
 
 th, td {
@@ -144,4 +170,55 @@ nav ul li a {
     margin: 20px 5px;
     
   }
+  select{
+    height: 40px;
+  }
   
+  .message {
+    color: green; /* Change color based on success or error */
+    margin-top: 20px;
+}
+.error-message {
+    color: red;
+    margin-top: 5px;
+    display: block; /* Added to stack error messages */
+}
+  /* styles.css or your corresponding CSS file */
+
+@keyframes zoomIn {
+  0% {
+      transform: scale(1);
+      opacity: 0;
+  }
+  50% {
+      transform: scale(1.1);
+      opacity: 1;
+  }
+  100% {
+      transform: scale(1);
+      opacity: 1;
+  }
+}
+
+@keyframes zoomOut {
+  0% {
+      transform: scale(1);
+      opacity: 1;
+  }
+  50% {
+      transform: scale(1.1);
+      opacity: 1;
+  }
+  100% {
+      transform: scale(1);
+      opacity: 0;
+  }
+}
+
+.zoom {
+  animation: zoomIn 10s forwards;
+}
+
+.fade {
+  animation: zoomOut 10s forwards;
+}

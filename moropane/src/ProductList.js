@@ -1,100 +1,184 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
-    const [editingProduct, setEditingProduct] = useState(null);
-    const [formData, setFormData] = useState({
-        id: '',
-        name: '',
-        description: '',
-        category: '',
-        price: '',
-        quantity: ''
-    });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [loadingDeleteName, setLoadingDeleteName] = useState(null);
+    const [message, setMessage] = useState('');
+    const [sellQuantity, setSellQuantity] = useState({});
+    const [transactionLog, setTransactionLog] = useState({}); // Holds transaction history for products
+    const navigate = useNavigate();
+
+    // Function to fetch products
+    const fetchProducts = async () => {
+        setLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            const response = await fetch('http://localhost:8081/api/products');
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            const data = await response.json();
+            setProducts(data);
+        } catch (error) {
+            setError('Error fetching products: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
-        setProducts(storedProducts);
+        fetchProducts(); // Fetch products when component mounts
     }, []);
 
-    const handleEditClick = (product) => {
-        setEditingProduct(product.id);
-        setFormData({ ...product }); // Pre-fill the form
+    // Function to handle deleting a product
+    const handleDelete = async (name) => {
+        const confirmDelete = window.confirm('Are you sure you want to delete this product?');
+        if (confirmDelete) {
+            setLoadingDeleteName(name);
+            setMessage('');
+            try {
+                const response = await fetch(`http://localhost:8081/api/products?name=${encodeURIComponent(name)}`, {
+                    method: 'DELETE',
+                });
+                if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.statusText);
+                }
+                setProducts((prevProducts) => prevProducts.filter((product) => product.name !== name));
+                setMessage('Product "' + name + '" deleted successfully');
+            } catch (error) {
+                setError('Error deleting product: ' + error.message);
+            } finally {
+                setLoadingDeleteName(null);
+            }
+        }
     };
 
-    const handleDelete = (id) => {
-        const updatedProducts = products.filter(p => p.id !== id);
-        setProducts(updatedProducts);
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-        alert('Product deleted successfully');
+    // Function to handle selling a product
+    const handleSell = async (name) => {
+        const quantityToSell = parseInt(sellQuantity[name], 10);
+        if (quantityToSell <= 0 || isNaN(quantityToSell)) {
+            alert("Quantity must be a positive number!");
+            return;
+        }
+        const confirmSell = window.confirm(`Are you sure you want to sell ${quantityToSell} of ${name}?`);
+        if (confirmSell) {
+            try {
+                const response = await fetch('http://localhost:8081/api/sell', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        quantity: quantityToSell,
+                    }),
+                });
+                if (!response.ok) {
+                    throw new Error('Error selling product: ' + response.statusText);
+                }
+                setMessage(`Successfully sold ${quantityToSell} of ${name}`);
+                // Update transaction log for this product
+                setTransactionLog((prev) => ({
+                    ...prev,
+                    [name]: [...(prev[name] || []), { action: 'deduct', quantity: quantityToSell }],
+                }));
+                setSellQuantity((prev) => ({ ...prev, [name]: '' })); // Reset the sold quantity input
+                fetchProducts(); // Refresh product list
+            } catch (error) {
+                setError('Error selling product: ' + error.message);
+            }
+        }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+    const handleEdit = (product) => {
+        navigate('/product-management', { state: product });
     };
 
-    const handleEditSubmit = (e) => {
-        e.preventDefault();
-        const updatedProducts = products.map(product => 
-            product.id === formData.id ? formData : product
-        );
-        setProducts(updatedProducts);
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-        alert('Product updated successfully');
-        setEditingProduct(null); // Exit edit mode
-        setFormData({ id: '', name: '', description: '', category: '', price: '', quantity: '' }); // Reset form
-    };
-
-    const handleCancelEdit = () => {
-        setEditingProduct(null);
-        setFormData({ id: '', name: '', description: '', category: '', price: '', quantity: '' });
-    };
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p>{error}</p>;
 
     return (
         <section>
-            <h2>List of Products</h2>
-            {editingProduct ? (
-                <form onSubmit={handleEditSubmit}>
-                    <h3>Edit Product</h3>
-                    <input type="hidden" name="id" value={formData.id} />
-                    <input type="text" name="name" placeholder="Name" value={formData.name} onChange={handleChange} required />
-                    <input type="text" name="description" placeholder="Description" value={formData.description} onChange={handleChange} required />
-                    <input type="text" name="category" placeholder="Category" value={formData.category} onChange={handleChange} required />
-                    <input type="number" name="price" placeholder="Price" value={formData.price} onChange={handleChange} required />
-                    <input type="number" name="quantity" placeholder="Quantity" value={formData.quantity} onChange={handleChange} required />
-                    <button type="submit">Update Product</button>
-                    <button type="button" onClick={handleCancelEdit}>Cancel</button>
-                </form>
-            ) : (
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Description</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Quantity</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {products.map(product => (
-                            <tr key={product.id}>
+            <h2>Product List</h2>
+            {message && <p>{message}</p>}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {products.length > 0 ? (
+                        products.map((product) => (
+                            <tr key={product.name}>
                                 <td>{product.name}</td>
                                 <td>{product.description}</td>
                                 <td>{product.category}</td>
-                                <td>{product.price}</td>
+                                <td>${product.price.toFixed(2)}</td>
                                 <td>{product.quantity}</td>
                                 <td>
-                                    <button onClick={() => handleEditClick(product)}>Edit</button>
-                                    <button onClick={() => handleDelete(product.id)}>Delete</button>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        value={sellQuantity[product.name] || ''}
+                                        onChange={(e) => setSellQuantity({ ...sellQuantity, [product.name]: e.target.value })}
+                                        placeholder="Quantity to Sell"
+                                    />
+                                    <button onClick={() => handleSell(product.name)}>Sell</button>
+                                    <button onClick={() => handleEdit(product)}>Edit</button>
+                                    <button 
+                                        onClick={() => handleDelete(product.name)} 
+                                        disabled={loadingDeleteName === product.name}
+                                    >
+                                        {loadingDeleteName === product.name ? 'Deleting...' : 'Delete'}
+                                    </button>
                                 </td>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan={6}>No products available</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+
+            <h3>Transaction Log</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Action</th>
+                        <th>Quantity Changed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {Object.keys(transactionLog).length > 0 ? (
+                        Object.keys(transactionLog).flatMap(productName => 
+                            transactionLog[productName].map((transaction, index) => (
+                                <tr key={`${productName}-${index}`}>
+                                    <td>{productName}</td>
+                                    <td>{transaction.action === 'deduct' ? 'Sold' : 'Added'}</td>
+                                    <td>{transaction.quantity}</td>
+                                </tr>
+                            ))
+                        )
+                    ) : (
+                        <tr>
+                            <td colSpan={3}>No transactions recorded</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
         </section>
     );
 };
